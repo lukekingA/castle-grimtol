@@ -4,9 +4,9 @@ using static CastleGrimtol.Project.GameService;
 
 namespace CastleGrimtol.Project.Interfaces {
     public interface IRoom {
-        string Name { get; set; }
-        string Description { get; set; }
+        string Name { get; }
+        string Description { get; }
         List<Item> Items { get; set; }
-        Dictionary<Direction, IRoom> Exits { get; set; }
+        Dictionary<Direction, IRoom> Exits { get; }
     }
 }

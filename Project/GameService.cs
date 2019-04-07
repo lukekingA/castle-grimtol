@@ -24,11 +24,12 @@ namespace CastleGrimtol.Project {
 		bool GameLoop { get; set; } = true;
 
 		public void Setup () {
-			Room begin = new Room ("Code Works", "Your phone is on your desk beside you. The elevator is to the north and the stairs are to the west");
+			Room begin = new Room ("Code Works", "The elevator is to the north and the stairs are to the west");
 			Room elevator = new Room ("Elevator", "The elevator door closes and you are unable to chose any floor but it begins to go down. The elevator stops at the first floor but the door doesn't open. You wait and press the door open button and nothing happens. Finnaly the door opens to the north");
 			Room upstairs = new Room ("Second floor stair landing", "You enter the stairs and the door closes behind you. The first floor landing is below you to the north.");
 			Room downstairs = new Room ("First floor stair landing", "You are standing at the bottom of the stairwell on the first floor");
 			Room lobby = new Room ("Lobby", "As you enter the loby the outside doors are to the north. The elavator is to the south and the stairs to west. It is dark out side and raining.");
+			Room rest = new Room ("Rest Room", "This is what you came for");
 			Room outside = new Room ("Outside", "You push the doors to the parking lot the doors close behind you.");
 
 			Item phone = new Item ("Phone", "your cell phone");
@@ -43,6 +44,8 @@ namespace CastleGrimtol.Project {
 			lobby.AddAdjacentRoom (Direction.south, elevator);
 			lobby.AddAdjacentRoom (Direction.north, outside);
 			lobby.AddAdjacentRoom (Direction.west, downstairs);
+			lobby.AddAdjacentRoom (Direction.east, rest);
+			rest.AddAdjacentRoom (Direction.west, lobby);
 			outside.AddLockedDoor (Direction.south, lobby);
 			upstairs.AddLockedDoor (Direction.east, begin);
 			upstairs.AddAdjacentRoom (Direction.north, downstairs);
@@ -233,8 +236,8 @@ namespace CastleGrimtol.Project {
 			EnterRoom ();
 			Console.ForegroundColor = ConsoleColor.Yellow;
 			System.Console.Write ("You have ");
-			foreach (Item item in CurrentPlayer.Inventory) {
-				System.Console.Write ($"{item.Name} ");
+			foreach (KeyValuePair<Item, bool> item in CurrentPlayer.Items) {
+				System.Console.Write ($"{item.Key.Name} ");
 			}
 			System.Console.WriteLine ("collected so far");
 			System.Console.WriteLine ("\n");
@@ -244,8 +247,8 @@ namespace CastleGrimtol.Project {
 		//Take item
 		public void TakeItem (Item item) {
 
-			CurrentPlayer.Inventory.Add (item);
-			CurrentRoom.Items.Remove (item);
+			CurrentPlayer.Items.Add (item, false);
+
 			Console.Clear ();
 
 			EnterRoom ();
@@ -319,29 +322,50 @@ namespace CastleGrimtol.Project {
 
 			EnterRoom ();
 			while (GameLoop) {
-				//LockDoors ();
+				EntryActions ();
 				GetUserInput ();
 			}
 		}
 
-		public void LockDoors () {
+		public void EntryActions () {
 			switch (CurrentRoom.Name) {
 				case "Elevator":
-					if (CurrentRoom.Exits.ContainsKey (Direction.south)) {
-						CurrentRoom.AddLockedDoor (Direction.south, CurrentRoom.Exits[Direction.south]);
-						CurrentRoom.Exits.Remove (Direction.south);
+
+					//the below doesn't work as the room doesnt have the item
+					foreach (KeyValuePair<Item, bool> item in CurrentPlayer.Items) {
+						if (item.Value && CurrentRoom.Items.Contains (item.Key)) {
+							IRoom room = CurrentRoom.LockedExits[0];
+							CurrentRoom.AddAdjacentRoom (Direction.up, room);
+						}
 					}
 					break;
 				case "First floor stair landing":
-					if (CurrentRoom.Exits.ContainsKey (Direction.east)) {
-						CurrentRoom.AddLockedDoor (Direction.east, CurrentRoom.Exits[Direction.east]);
-						CurrentRoom.Exits.Remove (Direction.east);
+					//the below doesn't work as the room doesnt have the item randomizer here
+					foreach (KeyValuePair<Item, bool> item in CurrentPlayer.Items) {
+						if (item.Value && CurrentRoom.Items.Contains (item.Key)) {
+							IRoom room = CurrentRoom.LockedExits[0];
+							CurrentRoom.AddAdjacentRoom (Direction.east, room);
+						}
 					}
 					break;
 				case "Outside":
-					if (CurrentRoom.Exits.ContainsKey (Direction.south)) {
-						CurrentRoom.AddLockedDoor (Direction.south, CurrentRoom.Exits[Direction.south]);
-						CurrentRoom.Exits.Remove (Direction.south);
+					Console.Clear ();
+					System.Console.WriteLine ("\n\n\n");
+					System.Console.WriteLine ("The Door is locked behind you and it is pooring rain.");
+					foreach (KeyValuePair<Item, bool> item in CurrentPlayer.Items) {
+						if (item.Key.Name == "Phone") {
+							System.Console.WriteLine ("Your phone is wet and shorted out.");
+						}
+					}
+					System.Console.WriteLine ("You Lose. Go Home.");
+					System.Console.WriteLine ("\n");
+					GameLoop = false;
+
+					break;
+				case "Rest Room":
+					Dictionary<Item, bool> copy = new Dictionary<Item, bool> (CurrentPlayer.Items);
+					foreach (KeyValuePair<Item, bool> item in copy) {
+						CurrentPlayer.Items[item.Key] = false;
 					}
 					break;
 			}
@@ -352,34 +376,34 @@ namespace CastleGrimtol.Project {
 
 					GraphicColor (@"
 
-                               ==============             
-                               M            M             
-                               M            M             
-                               M   outside  M             
-                               M            M             
-                               M            M             
-                               MMMMMMMMMMMMMM             
-              ===============  ==============             
-              M             M  M            M             
-              M             M  M            M             
-              M down stairs M  M   lobby    M             
-              M   landing   M  M            M             
-              M             M  M            M             
-              M             M  MMMMMMMMMMMMMM             
-              M             M  ==============             
-              M             M  M            M             
-              MMMMMMMMMMMMMMM  M            M             
-                               M  elevator  M             
-              MMMMMMMMMMMMMMM  M            M      ^      
-              M             M  M            M      N      
-              M             M  MMMMMMMMMMMMMM             
-              M             M  ==============             
-              M  up stairs  M  M      ^     M             
-              M   landing   M  M            M             
-              M             M  M   you are  M             
-              M             M  M    here    M             
-              M             M  M <          M             
-              MMMMMMMMMMMMMMM  MMMMMMMMMMMMMM             
+                               ==============            
+                               M            M            
+                               M            M            
+                               M   outside  M            
+                               M            M            
+                               M            M            
+                               MMMMMMMMMMMMMM            
+              ===============  ==============            
+              M             M  M            M ========== 
+              M             M  M            M M  Rest  M 
+              M down stairs M  M   lobby    M M        M 
+              M   landing   M  M            M M  Room  M 
+              M             M  M            M ========== 
+              M             M  MMMMMMMMMMMMMM            
+              M             M  ==============            
+              M             M  M            M            
+              MMMMMMMMMMMMMMM  M            M            
+                               M  elevator  M            
+              MMMMMMMMMMMMMMM  M            M      ^     
+              M             M  M            M      N     
+              M             M  MMMMMMMMMMMMMM            
+              M             M  ==============            
+              M  up stairs  M  M      ^     M            
+              M   landing   M  M            M            
+              M             M  M   you are  M            
+              M             M  M    here    M            
+              M             M  M <          M            
+              MMMMMMMMMMMMMMM  MMMMMMMMMMMMMM            
 ");
 					break;
 				case "Elevator":
@@ -393,11 +417,11 @@ namespace CastleGrimtol.Project {
                                M            M            
                                MMMMMMMMMMMMMM            
               ===============  ==============            
-              M             M  M            M            
-              M             M  M            M            
-              M down stairs M  M   lobby    M            
-              M   landing   M  M            M            
-              M             M  M            M            
+              M             M  M            M ========== 
+              M             M  M            M M  Rest  M 
+              M down stairs M  M   lobby    M M        M 
+              M   landing   M  M            M M  Room  M 
+              M             M  M            M ========== 
               M             M  MMMMMMMMMMMMMM            
               M             M  ==============            
               MMMMMMMMMMMMMMM  M     ^      M            
@@ -425,12 +449,12 @@ namespace CastleGrimtol.Project {
                                M            M           
                                M            M           
                                MMMMMMMMMMMMMM           
-              ===============  ==============           
-              M             M  M     ^      M           
-              M             M  M <          M           
-              M             M  M   you are  M           
-              M down stairs M  M    here    M           
-              M   landing   M  M     v      M           
+              ===============  ==============          
+              M             M  M     ^      M ==========
+              M             M  M <        > M M  Rest  M
+              M             M  M   you are  M M        M
+              M down stairs M  M    here    M M  Room  M
+              M   landing   M  M      v     M ==========
               M             M  MMMMMMMMMMMMMM           
               M             M  ==============           
               M             M  M            M           
@@ -460,11 +484,11 @@ namespace CastleGrimtol.Project {
                                M            M           
                                MMMMMMMMMMMMMM           
               ===============  ==============           
-              M             M  M            M           
-              M           > M  M            M           
-              M   you are   M  M   lobby    M           
-              M    here     M  M            M           
-              M             M  M            M           
+              M             M  M            M ==========
+              M           > M  M            M M  Rest  M
+              M   you are   M  M   lobby    M M        M
+              M    here     M  M            M M  Room  M
+              M             M  M            M ==========
               M             M  MMMMMMMMMMMMMM           
               M             M  ==============           
               M      v      M  M            M           
@@ -486,34 +510,34 @@ namespace CastleGrimtol.Project {
 				case "Second floor stair landing":
 					GraphicColor (@"
 
-                               ==============             
-                               M            M             
-                               M            M             
-                               M   outside  M             
-                               M            M             
-                               M            M             
-                               MMMMMMMMMMMMMM             
-              ===============  ==============             
-              M             M  M            M             
-              M             M  M            M             
-              M down stairs M  M   lobby    M             
-              M   landing   M  M            M             
-              M             M  M            M             
-              M             M  MMMMMMMMMMMMMM             
-              M             M  ==============             
-              M             M  M            M             
-              MMMMMMMMMMMMMMM  M            M             
-                               M  elevator  M             
-              MMMMMMMMMMMMMMM  M            M      ^      
-              M      ^      M  M            M      N      
-              M             M  MMMMMMMMMMMMMM             
-              M             M  ==============             
-              M   you are   M  M            M             
-              M    here     M  M            M             
-              M             M  M Code Works M             
-              M           > M  M            M             
-              M             M  M            M             
-              MMMMMMMMMMMMMMM  MMMMMMMMMMMMMM             
+                               ==============            
+                               M            M            
+                               M            M            
+                               M   outside  M            
+                               M            M            
+                               M            M            
+                               MMMMMMMMMMMMMM            
+              ===============  ==============            
+              M             M  M            M ========== 
+              M             M  M            M M  Rest  M 
+              M down stairs M  M   lobby    M M        M 
+              M   landing   M  M            M M  Room  M 
+              M             M  M            M ========== 
+              M             M  MMMMMMMMMMMMMM            
+              M             M  ==============            
+              M             M  M            M            
+              MMMMMMMMMMMMMMM  M            M            
+                               M  elevator  M            
+              MMMMMMMMMMMMMMM  M            M      ^     
+              M      ^      M  M            M      N     
+              M             M  MMMMMMMMMMMMMM            
+              M             M  ==============            
+              M   you are   M  M            M            
+              M    here     M  M            M            
+              M             M  M Code Works M            
+              M           > M  M            M            
+              M             M  M            M            
+              MMMMMMMMMMMMMMM  MMMMMMMMMMMMMM            
 
 ");
 					break;
@@ -528,11 +552,11 @@ namespace CastleGrimtol.Project {
                                M     v      M            
                                MMMMMMMMMMMMMM            
               ===============  ==============            
-              M             M  M            M            
-              M             M  M            M            
-              M down stairs M  M   lobby    M            
-              M   landing   M  M            M            
-              M             M  M            M            
+              M             M  M            M ==========  
+              M             M  M            M M  Rest  M  
+              M down stairs M  M   lobby    M M        M  
+              M   landing   M  M            M M  Room  M  
+              M             M  M            M ==========  
               M             M  MMMMMMMMMMMMMM            
               M             M  ==============            
               M             M  M            M            
@@ -547,7 +571,41 @@ namespace CastleGrimtol.Project {
               M             M  M Code Works M            
               M             M  M            M            
               M             M  M            M            
-              MMMMMMMMMMMMMMM  MMMMMMMMMMMMMM           
+              MMMMMMMMMMMMMMM  MMMMMMMMMMMMMM            
+");
+
+					break;
+				case "Rest Room":
+					GraphicColor (@"
+
+                               ==============            
+                               M            M            
+                               M            M            
+                               M  Outside   M            
+                               M            M            
+                               M            M            
+                               MMMMMMMMMMMMMM   You are  
+              ===============  ==============     here   
+              M             M  M            M ==========  
+              M             M  M            M M  Rest  M  
+              M down stairs M  M   lobby    M M <      M  
+              M   landing   M  M            M M  Room  M  
+              M             M  M            M ==========  
+              M             M  MMMMMMMMMMMMMM            
+              M             M  ==============            
+              M             M  M            M            
+              MMMMMMMMMMMMMMM  M            M            
+                               M  elevator  M            
+              MMMMMMMMMMMMMMM  M            M      ^     
+              M             M  M            M      N     
+              M             M  MMMMMMMMMMMMMM            
+              M             M  ==============            
+              M  up stairs  M  M            M            
+              M   landing   M  M            M            
+              M             M  M Code Works M            
+              M             M  M            M            
+              M             M  M            M            
+              MMMMMMMMMMMMMMM  MMMMMMMMMMMMMM            
 ");
 
 					break;

@@ -5,11 +5,16 @@ namespace CastleGrimtol.Project.Models {
     public class Player : IPlayer {
         public Player (string name) {
             PlayerName = name;
-            Inventory = new List<Item> ();
+            Items = new Dictionary<Item, bool> ();
         }
 
+        public void ItemActiveSwitch (Item item) {
+            if (Items.ContainsKey (item)) {
+                Items[item] = !Items[item];
+            }
+        }
         public string PlayerName { get; private set; }
-        public List<Item> Inventory { get; private set; }
 
+        public Dictionary<Item, bool> Items { get; set; }
     }
 }
