@@ -21,6 +21,8 @@ namespace CastleGrimtol.Project {
 
 		public Room CurrentRoom { get; set; }
 
+		bool GameLoop { get; set; } = true;
+
 		public void Setup () {
 			Room begin = new Room ("Code Works", "Your phone is on your desk beside you. The elevator is to the north and the stairs are to the west");
 			Room elevator = new Room ("Elevator", "The elevator door closes and you are unable to chose any floor but it begins to go down. The elevator stops at the first floor but the door doesn't open. You wait and press the door open button and nothing happens. Finnaly the door opens to the north");
@@ -36,13 +38,13 @@ namespace CastleGrimtol.Project {
 
 			begin.AddAdjacentRoom (Direction.north, elevator);
 			begin.AddAdjacentRoom (Direction.west, upstairs);
-			elevator.AddAdjacentRoom (Direction.south, begin);
-			elevator.AddAdjacentRoom (Direction.north, lobby);
+			elevator.AddLockedDoor (Direction.up, begin);
+			elevator.AddAdjacentRoom (Direction.down, lobby);
 			lobby.AddAdjacentRoom (Direction.south, elevator);
 			lobby.AddAdjacentRoom (Direction.north, outside);
 			lobby.AddAdjacentRoom (Direction.west, downstairs);
-			outside.AddAdjacentRoom (Direction.south, lobby);
-			upstairs.AddAdjacentRoom (Direction.east, begin);
+			outside.AddLockedDoor (Direction.south, lobby);
+			upstairs.AddLockedDoor (Direction.east, begin);
 			upstairs.AddAdjacentRoom (Direction.north, downstairs);
 			downstairs.AddAdjacentRoom (Direction.south, upstairs);
 			downstairs.AddAdjacentRoom (Direction.east, lobby);
@@ -52,16 +54,26 @@ namespace CastleGrimtol.Project {
 
 		public void EnterRoom () {
 			Console.Clear ();
-
+			System.Console.WriteLine ("\n\n");
 			RoomGraphic ();
+			Console.ForegroundColor = ConsoleColor.Yellow;
 			System.Console.WriteLine ($"You are in {CurrentRoom.Name}");
 			System.Console.WriteLine (CurrentRoom.Description);
 			System.Console.WriteLine ("Where do you want to go?");
+			System.Console.WriteLine ("\n");
+			Console.ResetColor ();
 		}
 
 		public void GetUserInput () {
-			System.Console.WriteLine ("You can type (H) for help,\n(Q) to quit,\n(L) to look for items to pickup in the room,\n(R) to restart,\n(I) to see the items that you have picked up and\n(T) to take an available item.");
+
+			Console.ForegroundColor = ConsoleColor.Blue;
+			System.Console.WriteLine ("To move type (go) and a direction (north), (south), (east), (west), (up), or (down)");
+			System.Console.WriteLine ("\n");
+			System.Console.WriteLine ("You can type\n(H) for help,\n(Q) to quit,\n(L) to look for items to pickup in the room,\n(R) to restart,\n(I) to see the items that you have picked up and\n(T) to take an available item.");
+			System.Console.WriteLine ("\n");
+			Console.ForegroundColor = ConsoleColor.Green;
 			string PlayerChioce = Console.ReadLine ();
+			Console.ResetColor ();
 			string choice = PlayerChioce.ToLower ();
 			switch (choice) {
 				case "go north":
@@ -106,7 +118,7 @@ namespace CastleGrimtol.Project {
 					break;
 				default:
 					EnterRoom ();
-					GetUserInput ();
+					//	GetUserInput ();
 					break;
 			}
 		}
@@ -134,20 +146,34 @@ namespace CastleGrimtol.Project {
 						SetRoom (Direction.down);
 						break;
 					default:
+						EnterRoom ();
+						Console.ForegroundColor = ConsoleColor.Red;
 						Console.WriteLine ("Invalid choice. Please retry");
-						GetUserInput ();
+						System.Console.WriteLine ("\n");
+						Console.ResetColor ();
 						break;
 				}
 			}
-			EnterRoom ();
-			GetUserInput ();
-		}
 
+		}
+		// Set room Location
 		public void SetRoom (Direction dir) {
+			if (CurrentRoom.LockedExits.ContainsKey (dir)) {
+				EnterRoom ();
+				Console.ForegroundColor = ConsoleColor.Red;
+				System.Console.WriteLine ($"The door to your {dir} is locked.");
+				System.Console.WriteLine ("\n");
+				Console.ResetColor ();
+			} else
 			if (CurrentRoom.Exits.ContainsKey (dir)) {
 				CurrentRoom = (Room) CurrentRoom.Exits[dir];
 				EnterRoom ();
-				GetUserInput ();
+			} else {
+				EnterRoom ();
+				Console.ForegroundColor = ConsoleColor.Red;
+				Console.WriteLine ("Invalid choice. Retry");
+				System.Console.WriteLine ("\n");
+				Console.ResetColor ();
 			}
 		}
 
@@ -195,24 +221,39 @@ namespace CastleGrimtol.Project {
 				Console.WriteLine ("Press enter to continue");
 				ConsoleKeyInfo keyInfo = Console.ReadKey ();
 				if (keyInfo.Key == ConsoleKey.Enter) {
+					entered = false;
 					EnterRoom ();
-					GetUserInput ();
+
 				}
 				continue;
 			}
 
 		}
 		public void Inventory () {
-			throw new NotImplementedException ();
+			EnterRoom ();
+			Console.ForegroundColor = ConsoleColor.Yellow;
+			System.Console.Write ("You have ");
+			foreach (Item item in CurrentPlayer.Inventory) {
+				System.Console.Write ($"{item.Name} ");
+			}
+			System.Console.WriteLine ("collected so far");
+			System.Console.WriteLine ("\n");
+			Console.ResetColor ();
+			//	GetUserInput ();
 		}
-
+		//Take item
 		public void TakeItem (Item item) {
 
 			CurrentPlayer.Inventory.Add (item);
 			CurrentRoom.Items.Remove (item);
+			Console.Clear ();
 
 			EnterRoom ();
-			GetUserInput ();
+			Console.ForegroundColor = ConsoleColor.Blue;
+			System.Console.WriteLine ($"You reach down and grab the {item.Name} and put it in your pocket.");
+			System.Console.WriteLine ("\n");
+			Console.ResetColor ();
+
 		}
 
 		public void UseItem (string itemName) {
@@ -223,13 +264,25 @@ namespace CastleGrimtol.Project {
 			StartGame ();
 		}
 
+		//Quit the game
+
 		public void Quit () {
+			GameLoop = false;
 			Console.Clear ();
+			System.Console.WriteLine ("\n\n\n");
+			Console.ForegroundColor = ConsoleColor.Yellow;
 			System.Console.WriteLine ("See You Later");
+			System.Console.WriteLine ("\n");
+			Console.ResetColor ();
 			return;
 		}
 
+		//Look around to see items in the room
 		public void Look () {
+			Console.Clear ();
+
+			EnterRoom ();
+			Console.ForegroundColor = ConsoleColor.Yellow;
 			if (CurrentRoom.Items.Count > 0) {
 				foreach (Item item in CurrentRoom.Items) {
 					System.Console.WriteLine ($"You see {item.Description}");
@@ -237,19 +290,21 @@ namespace CastleGrimtol.Project {
 			} else {
 				System.Console.WriteLine ("Nothing to see here.");
 			}
-			GetUserInput ();
+			Console.ResetColor ();
+			System.Console.WriteLine ("\n");
+
 		}
+		// Begin function, start
 		public void StartGame () {
 			Setup ();
 			Console.Clear ();
-			//bool GetPlayerLoop = true;
+			System.Console.WriteLine ("\n\n\n");
 			while (CurrentPlayer == null) {
 				System.Console.WriteLine ("Plaese Enter Your name.");
 				string CurPlayer = Console.ReadLine ();
 				System.Console.WriteLine (CurPlayer + "? (Y) or (R) to reenter");
 				ConsoleKeyInfo playerEntry = Console.ReadKey ();
 				if (playerEntry.KeyChar.ToString ().ToLower () == "y") {
-					//GetPlayerLoop = false;
 					CurrentPlayer = new Player (CurPlayer);
 					Console.Clear ();
 				}
@@ -261,9 +316,12 @@ namespace CastleGrimtol.Project {
 			System.Console.WriteLine ($"Wellcome to the Hackathon {CurrentPlayer.PlayerName}");
 			System.Console.WriteLine ("It's after midnight. It seems that the bathroom is always busy so you need to use one on a different floor.");
 			System.Console.WriteLine ("Let's see if you can get throught the building and back to your desk.");
-			LockDoors ();
+
 			EnterRoom ();
-			GetUserInput ();
+			while (GameLoop) {
+				//LockDoors ();
+				GetUserInput ();
+			}
 		}
 
 		public void LockDoors () {
@@ -280,210 +338,228 @@ namespace CastleGrimtol.Project {
 						CurrentRoom.Exits.Remove (Direction.east);
 					}
 					break;
+				case "Outside":
+					if (CurrentRoom.Exits.ContainsKey (Direction.south)) {
+						CurrentRoom.AddLockedDoor (Direction.south, CurrentRoom.Exits[Direction.south]);
+						CurrentRoom.Exits.Remove (Direction.south);
+					}
+					break;
 			}
 		}
 		public void RoomGraphic () {
 			switch (CurrentRoom.Name) {
 				case "Code Works":
-					System.Console.WriteLine (@"
 
-                               ==============                                    
-                               M            M                                    
-                               M            M                                    
-                               M   outside  M                                    
-                               M            M                                    
-                               M            M                                    
-                               MMMMMMMMMMMMMM                                    
-              ===============  ==============                                    
-              M             M  M            M                                    
-              M             M  M            M                                    
-              M down stairs M  M   lobby    M                                    
-              M   landing   M  M            M                                    
-              M             M  M            M                                    
-              M             M  MMMMMMMMMMMMMM                                    
-              M             M  ==============                                    
-              M             M  M            M                                    
-              MMMMMMMMMMMMMMM  M            M                                    
-                               M  elevator  M                                    
-              MMMMMMMMMMMMMMM  M            M      ^                             
-              M             M  M            M      N                             
-              M             M  MMMMMMMMMMMMMM                                    
-              M             M  ==============                                    
-              M  up stairs  M  M      ^     M                                    
-              M   landing   M  M            M                                    
-              M             M  M   you are  M                                    
-              M             M  M    here    M                                    
-              M             M  M <          M                                    
-              MMMMMMMMMMMMMMM  MMMMMMMMMMMMMM                                    
+					GraphicColor (@"
+
+                               ==============             
+                               M            M             
+                               M            M             
+                               M   outside  M             
+                               M            M             
+                               M            M             
+                               MMMMMMMMMMMMMM             
+              ===============  ==============             
+              M             M  M            M             
+              M             M  M            M             
+              M down stairs M  M   lobby    M             
+              M   landing   M  M            M             
+              M             M  M            M             
+              M             M  MMMMMMMMMMMMMM             
+              M             M  ==============             
+              M             M  M            M             
+              MMMMMMMMMMMMMMM  M            M             
+                               M  elevator  M             
+              MMMMMMMMMMMMMMM  M            M      ^      
+              M             M  M            M      N      
+              M             M  MMMMMMMMMMMMMM             
+              M             M  ==============             
+              M  up stairs  M  M      ^     M             
+              M   landing   M  M            M             
+              M             M  M   you are  M             
+              M             M  M    here    M             
+              M             M  M <          M             
+              MMMMMMMMMMMMMMM  MMMMMMMMMMMMMM             
 ");
 					break;
 				case "Elevator":
-					System.Console.WriteLine (@"
+					GraphicColor (@"
 
-                               ==============                                    
-                               M            M                                    
-                               M            M                                    
-                               M   outside  M                                    
-                               M            M                                    
-                               M            M                                    
-                               MMMMMMMMMMMMMM                                    
-              ===============  ==============                                    
-              M             M  M            M                                    
-              M             M  M            M                                    
-              M down stairs M  M   lobby    M                                    
-              M   landing   M  M            M                                    
-              M             M  M            M                                    
-              M             M  MMMMMMMMMMMMMM                                    
-              M             M  ==============                                    
-              MMMMMMMMMMMMMMM  M     ^      M                                    
-                               M  you are   M                                    
-              MMMMMMMMMMMMMMM  M    here    M      ^                             
-              M             M  M            M      N                             
-              M             M  M     v      M                                    
-              M             M  MMMMMMMMMMMMMM                                    
-              M             M  ==============                                    
-              M  up stairs  M  M            M                                    
-              M   landing   M  M            M                                    
-              M             M  M Code Works M                                    
-              M             M  M            M                                    
-              M             M  M            M                                    
-              MMMMMMMMMMMMMMM  MMMMMMMMMMMMMM                                    
+                               ==============            
+                               M            M            
+                               M            M            
+                               M   outside  M            
+                               M            M            
+                               M            M            
+                               MMMMMMMMMMMMMM            
+              ===============  ==============            
+              M             M  M            M            
+              M             M  M            M            
+              M down stairs M  M   lobby    M            
+              M   landing   M  M            M            
+              M             M  M            M            
+              M             M  MMMMMMMMMMMMMM            
+              M             M  ==============            
+              MMMMMMMMMMMMMMM  M     ^      M            
+                               M  you are   M            
+              MMMMMMMMMMMMMMM  M    here    M      ^     
+              M             M  M            M      N     
+              M             M  M     v      M            
+              M             M  MMMMMMMMMMMMMM            
+              M             M  ==============            
+              M  up stairs  M  M            M            
+              M   landing   M  M            M            
+              M             M  M Code Works M            
+              M             M  M            M            
+              M             M  M            M            
+              MMMMMMMMMMMMMMM  MMMMMMMMMMMMMM            
 ");
 					break;
 				case "Lobby":
-					System.Console.WriteLine (@"
+					GraphicColor (@"
 
-                               ==============                                    
-                               M            M                                    
-                               M            M                                    
-                               M   outside  M                                    
-                               M            M                                    
-                               M            M                                    
-                               MMMMMMMMMMMMMM                                    
-              ===============  ==============                                    
-              M             M  M     ^      M                                    
-              M             M  M <          M                                    
-              M             M  M   you are  M                                    
-              M down stairs M  M    here    M                                    
-              M   landing   M  M     v      M                                    
-              M             M  MMMMMMMMMMMMMM                                    
-              M             M  ==============                                    
-              M             M  M            M                                    
-              MMMMMMMMMMMMMMM  M            M                                    
-                               M  elevator  M                                    
-              MMMMMMMMMMMMMMM  M            M      ^                             
-              M             M  M            M      N                             
-              M             M  MMMMMMMMMMMMMM                                    
-              M             M  ==============                                    
-              M  up stairs  M  M            M                                    
-              M   landing   M  M            M                                    
-              M             M  M Code Works M                                    
-              M             M  M            M                                    
-              M             M  M            M                                    
-              MMMMMMMMMMMMMMM  MMMMMMMMMMMMMM                                    
+                               ==============           
+                               M            M           
+                               M            M           
+                               M   outside  M           
+                               M            M           
+                               M            M           
+                               MMMMMMMMMMMMMM           
+              ===============  ==============           
+              M             M  M     ^      M           
+              M             M  M <          M           
+              M             M  M   you are  M           
+              M down stairs M  M    here    M           
+              M   landing   M  M     v      M           
+              M             M  MMMMMMMMMMMMMM           
+              M             M  ==============           
+              M             M  M            M           
+              MMMMMMMMMMMMMMM  M            M           
+                               M  elevator  M           
+              MMMMMMMMMMMMMMM  M            M      ^    
+              M             M  M            M      N    
+              M             M  MMMMMMMMMMMMMM           
+              M             M  ==============           
+              M  up stairs  M  M            M           
+              M   landing   M  M            M           
+              M             M  M Code Works M           
+              M             M  M            M           
+              M             M  M            M           
+              MMMMMMMMMMMMMMM  MMMMMMMMMMMMMM           
+
 ");
 					break;
 				case "First floor stair landing":
-					System.Console.WriteLine (@"
+					GraphicColor (@"
 
-                               ==============                                    
-                               M            M                                    
-                               M            M                                    
-                               M   outside  M                                    
-                               M            M                                    
-                               M            M                                    
-                               MMMMMMMMMMMMMM                                    
-              ===============  ==============                                    
-              M             M  M            M                                    
-              M           > M  M            M                                    
-              M   you are   M  M   lobby    M                                    
-              M    here     M  M            M                                    
-              M             M  M            M                                    
-              M             M  MMMMMMMMMMMMMM                                    
-              M             M  ==============                                    
-              M      v      M  M            M                                    
-              MMMMMMMMMMMMMMM  M            M                                    
-                               M  elevator  M                                    
-              MMMMMMMMMMMMMMM  M            M      ^                             
-              M             M  M            M      N                             
-              M             M  MMMMMMMMMMMMMM                                    
-              M             M  ==============                                    
-              M  up stairs  M  M            M                                    
-              M   landing   M  M            M                                    
-              M             M  M Code Works M                                    
-              M             M  M            M                                    
-              M             M  M            M                                    
-              MMMMMMMMMMMMMMM  MMMMMMMMMMMMMM                                    
+                               ==============           
+                               M            M           
+                               M            M           
+                               M   outside  M           
+                               M            M           
+                               M            M           
+                               MMMMMMMMMMMMMM           
+              ===============  ==============           
+              M             M  M            M           
+              M           > M  M            M           
+              M   you are   M  M   lobby    M           
+              M    here     M  M            M           
+              M             M  M            M           
+              M             M  MMMMMMMMMMMMMM           
+              M             M  ==============           
+              M      v      M  M            M           
+              MMMMMMMMMMMMMMM  M            M           
+                               M  elevator  M           
+              MMMMMMMMMMMMMMM  M            M      ^    
+              M             M  M            M      N    
+              M             M  MMMMMMMMMMMMMM           
+              M             M  ==============           
+              M  up stairs  M  M            M           
+              M   landing   M  M            M           
+              M             M  M Code Works M           
+              M             M  M            M           
+              M             M  M            M           
+              MMMMMMMMMMMMMMM  MMMMMMMMMMMMMM           
+
 ");
 					break;
 				case "Second floor stair landing":
-					System.Console.WriteLine (@"
+					GraphicColor (@"
 
-                               ==============                                    
-                               M            M                                    
-                               M            M                                    
-                               M   outside  M                                    
-                               M            M                                    
-                               M            M                                    
-                               MMMMMMMMMMMMMM                                    
-              ===============  ==============                                    
-              M             M  M            M                                    
-              M             M  M            M                                    
-              M down stairs M  M   lobby    M                                    
-              M   landing   M  M            M                                    
-              M             M  M            M                                    
-              M             M  MMMMMMMMMMMMMM                                    
-              M             M  ==============                                    
-              M             M  M            M                                    
-              MMMMMMMMMMMMMMM  M            M                                    
-                               M  elevator  M                                    
-              MMMMMMMMMMMMMMM  M            M      ^                             
-              M      ^      M  M            M      N                             
-              M             M  MMMMMMMMMMMMMM                                    
-              M             M  ==============                                    
-              M   you are   M  M            M                                    
-              M    here     M  M            M                                    
-              M             M  M Code Works M                                    
-              M           > M  M            M                                    
-              M             M  M            M                                    
-              MMMMMMMMMMMMMMM  MMMMMMMMMMMMMM                                    
+                               ==============             
+                               M            M             
+                               M            M             
+                               M   outside  M             
+                               M            M             
+                               M            M             
+                               MMMMMMMMMMMMMM             
+              ===============  ==============             
+              M             M  M            M             
+              M             M  M            M             
+              M down stairs M  M   lobby    M             
+              M   landing   M  M            M             
+              M             M  M            M             
+              M             M  MMMMMMMMMMMMMM             
+              M             M  ==============             
+              M             M  M            M             
+              MMMMMMMMMMMMMMM  M            M             
+                               M  elevator  M             
+              MMMMMMMMMMMMMMM  M            M      ^      
+              M      ^      M  M            M      N      
+              M             M  MMMMMMMMMMMMMM             
+              M             M  ==============             
+              M   you are   M  M            M             
+              M    here     M  M            M             
+              M             M  M Code Works M             
+              M           > M  M            M             
+              M             M  M            M             
+              MMMMMMMMMMMMMMM  MMMMMMMMMMMMMM             
+
 ");
 					break;
 				case "Outside":
-					System.Console.WriteLine (@"
+					GraphicColor (@"
 
-                               ==============                                    
-                               M            M                                    
-                               M            M                                    
-                               M   you are  M                                    
-                               M    here    M                                    
-                               M     v      M                                    
-                               MMMMMMMMMMMMMM                                    
-              ===============  ==============                                    
-              M             M  M            M                                    
-              M             M  M            M                                    
-              M down stairs M  M   lobby    M                                    
-              M   landing   M  M            M                                    
-              M             M  M            M                                    
-              M             M  MMMMMMMMMMMMMM                                    
-              M             M  ==============                                    
-              M             M  M            M                                    
-              MMMMMMMMMMMMMMM  M            M                                    
-                               M  elevator  M                                    
-              MMMMMMMMMMMMMMM  M            M      ^                             
-              M             M  M            M      N                             
-              M             M  MMMMMMMMMMMMMM                                    
-              M             M  ==============                                    
-              M  up stairs  M  M            M                                    
-              M   landing   M  M            M                                    
-              M             M  M Code Works M                                    
-              M             M  M            M                                    
-              M             M  M            M                                    
-              MMMMMMMMMMMMMMM  MMMMMMMMMMMMMM                                    
+                               ==============            
+                               M            M            
+                               M            M            
+                               M   you are  M            
+                               M    here    M            
+                               M     v      M            
+                               MMMMMMMMMMMMMM            
+              ===============  ==============            
+              M             M  M            M            
+              M             M  M            M            
+              M down stairs M  M   lobby    M            
+              M   landing   M  M            M            
+              M             M  M            M            
+              M             M  MMMMMMMMMMMMMM            
+              M             M  ==============            
+              M             M  M            M            
+              MMMMMMMMMMMMMMM  M            M            
+                               M  elevator  M            
+              MMMMMMMMMMMMMMM  M            M      ^     
+              M             M  M            M      N     
+              M             M  MMMMMMMMMMMMMM            
+              M             M  ==============            
+              M  up stairs  M  M            M            
+              M   landing   M  M            M            
+              M             M  M Code Works M            
+              M             M  M            M            
+              M             M  M            M            
+              MMMMMMMMMMMMMMM  MMMMMMMMMMMMMM           
 ");
+
 					break;
 			}
 		}
+		private void GraphicColor (string input) {
+			Console.ForegroundColor = ConsoleColor.Red;
+			Console.BackgroundColor = ConsoleColor.White;
+			System.Console.WriteLine ($"{input}");
+			Console.ResetColor ();
+		}
+
 	}
 
 }

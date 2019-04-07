@@ -9,13 +9,14 @@ namespace CastleGrimtol.Project.Models {
             Description = desc;
             Items = new List<Item> ();
             Exits = new Dictionary<Direction, IRoom> ();
+            LockedExits = new Dictionary<Direction, IRoom> ();
         }
 
         public void AddAdjacentRoom (Direction door, IRoom room) {
             Exits.Add (door, room);
         }
         public void AddLockedDoor (Direction door, IRoom room) {
-            Exits.Add (door, room);
+            LockedExits.Add (door, room);
         }
 
         public string Name { get; set; }
