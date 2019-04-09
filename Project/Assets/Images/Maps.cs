@@ -1,8 +1,8 @@
 using System;
 
 namespace CastleGrimtol.Project.Images {
-  class Maps {
-    public void Image (string image) {
+  static public class Maps {
+    public static void Image (string image) {
       switch (image) {
         case "Code Works":
 
@@ -295,7 +295,7 @@ namespace CastleGrimtol.Project.Images {
       }
 
     }
-    private void GraphicColor(string input) {
+    private static void GraphicColor(string input) {
       Console.ForegroundColor = ConsoleColor.Red;
       Console.BackgroundColor = ConsoleColor.White;
       System.Console.WriteLine($"{input}");

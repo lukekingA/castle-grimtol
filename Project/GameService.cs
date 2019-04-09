@@ -27,8 +27,6 @@ namespace CastleGrimtol.Project {
 
 		public bool GameWon { get; set; }
 
-		Maps map = new Maps ();
-
 		public void Setup () {
 
 			Room begin = new Room ("Code Works", "The elevator is to the north and the stairs are to the west");
@@ -68,7 +66,7 @@ namespace CastleGrimtol.Project {
 		}
 
 		public void RoomGraphic () {
-			map.Image (CurrentRoom.Name);
+			Maps.Image (CurrentRoom.Name);
 		}
 		public void EnterRoom () {
 			Console.Clear ();
@@ -232,7 +230,7 @@ namespace CastleGrimtol.Project {
 		}
 
 		public void Help () {
-			map.Image ("Help Map");
+			Maps.Image ("Help Map");
 			System.Console.WriteLine ("\n");
 			Console.WriteLine ("Directions to move");
 			Console.WriteLine ("go forward, go back, go right, go left");
@@ -382,7 +380,7 @@ namespace CastleGrimtol.Project {
 				case "Code Works":
 					if (GameWon) {
 
-						map.Image ("Win");
+						Maps.Image ("Win");
 						CurrentPlayer.Items.Clear ();
 						Setup ();
 					}
