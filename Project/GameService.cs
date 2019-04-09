@@ -351,7 +351,7 @@ namespace CastleGrimtol.Project {
 			Console.Clear ();
 			System.Console.WriteLine ("\n\n\n");
 			while (CurrentPlayer == null) {
-				System.Console.WriteLine ("Plaese Enter Your name.");
+				System.Console.WriteLine ("Please Enter Your name.");
 				string CurPlayer = Console.ReadLine ();
 				System.Console.WriteLine (CurPlayer + "? (Y) or any key to reenter");
 				ConsoleKeyInfo playerEntry = Console.ReadKey ();
